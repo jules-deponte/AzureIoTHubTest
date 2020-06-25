@@ -5,6 +5,7 @@ import paho.mqtt.client as mqtt
 import random
 import time
 import sys
+import json
 
 # Using the Python Device SDK for IoT Hub:
 #   https://github.com/Azure/azure-iot-sdk-python
@@ -48,24 +49,19 @@ def on_connect(client, userdata, flags, rc):
 def on_disconnect(client, userdata, flags, rc = 0):
     print("Disconnect result code: " + str(rc))
 
-data = ''
+data = 0
 def on_message(client, userdata, msg):
     
     global data
     topic = msg.topic
     m_decode = str(msg.payload.decode("utf-8", "ignore"))
     msg_out = "Message received: ", topic, ' ', m_decode
-    data = m_decode
-    
-    
+    data = float(m_decode)
     
 broker = "192.168.1.37"
 m_client = mqtt.Client("1")
-#m_client = mqtt.Client()
-
 m_client.on_connect = on_connect
 m_client.on_disconnect = on_disconnect
-#client.on_log = on_log
 m_client.on_message = on_message
 m_client.username_pw_set("")
 
@@ -84,24 +80,12 @@ def iothub_client_telemetry_sample_run():
 #             m_client.subscribe("sensornode/live/Gyroscope/z")    
             m_client.subscribe("sensornode/livestream/Accelerometer/z") #Your MQTT topic
 #             m_client.subscribe("sensornode/live/Accelerometer/x")
+            data = {"zaccel":data}
+            data = json.dumps(data)
             print(data)
-            
-            # Build the message with simulated telemetry values.
-            temperature = TEMPERATURE + (random.random() * 15)
-            humidity = HUMIDITY + (random.random() * 20)
-            msg_txt_formatted = MSG_TXT % (temperature, humidity)
             message = IoTHubMessage(data)
 
-            # Add a custom application property to the message.
-            # An IoT hub can filter on these properties without access to the message body.
-#             prop_map = message.properties()
-#             if temperature > 30:
-#               prop_map.add("temperatureAlert", "true")
-#             else:
-#               prop_map.add("temperatureAlert", "false")
 
-            # Send the message.
-            #print( "Sending message: %s" % message.get_string() )
             client.send_event_async(message, send_confirmation_callback, None)
             time.sleep(1)
 
